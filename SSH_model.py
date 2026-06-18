@@ -1,15 +1,29 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-v = 0.5
-w = 0.6
+v = [0, 0.4, 0.5, 0.6, 1]
+w = [1.0, 0.6, 0.5, 0.4, 0]
 
 k = np.linspace(-np.pi, np.pi, 1000)
 
-E = np.sqrt(v**2 + w**2 + 2*v*w*np.cos(k))
+fig, ax = plt.subplots(1, 5, figsize=(15, 4), sharey=True)
 
-plt.plot(k,E)
-plt.plot(k,-E)
+for i in range(5):
+    E = np.sqrt(v[i]**2 + w[i]**2 + 2*v[i]*w[i]*np.cos(k))
 
-plt.grid()
+    ax[i].plot(k, E)
+    ax[i].plot(k, -E)
+
+    ax[i].set_title(f"v={v[i]}, w={w[i]}")
+    ax[i].grid(True)
+
+    ax[i].set_xticks([-np.pi, 0, np.pi])
+    ax[i].set_xticklabels([r"$-\pi$", "0", r"$\pi$"])
+
+    ax[i].set_xlabel(r"$k$")
+
+ax[0].set_ylabel(r"$E(k)$")
+
+plt.suptitle("SSH Dispersion Relation", fontsize=14)
+plt.tight_layout()
 plt.show()
