@@ -96,8 +96,8 @@ def plot_band(ax, v, w):
 
     E = ssh_dispersion(v, w, k)
 
-    ax.plot(k, E, color="black", lw=2)
-    ax.plot(k, -E, color="black", lw=2)
+    ax.plot(k, E, color="blue", lw=2)
+    ax.plot(k, -E, color="blue", lw=2)
 
     ax.set_xlim(-np.pi, np.pi)
     ax.set_ylim(-1.5, 1.5)
@@ -117,7 +117,7 @@ def plot_winding(ax, v, w):
 
     dx, dy = winding_curve(v, w, k)
 
-    ax.plot(dx, dy, color="black", lw=2)
+    ax.plot(dx, dy, color="blue", lw=2)
 
     draw_arrow(ax, dx, dy)
 

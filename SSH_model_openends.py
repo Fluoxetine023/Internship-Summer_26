@@ -1,0 +1,186 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import scipy.linalg as la
+from pathlib import Path
+
+OUTPUT_DIR = Path("figures")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+# Plotting parameters
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "mathtext.fontset": "cm",
+    "font.size": 22,
+    "axes.labelsize": 23,
+    "axes.titlesize": 22,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+    "axes.linewidth": 2,
+    "xtick.direction": "in",
+    "ytick.direction": "in",
+    "xtick.major.size": 5,
+    "ytick.major.size": 5,
+    "figure.dpi": 150,
+    "savefig.dpi": 600,
+})
+
+def build_ssh_hamiltonian(v: float, w: float, n_cells: int) -> np.ndarray:
+    """Constructs the Hamiltonian matrix for the Su-Schrieffer-Heeger (SSH) model."""
+    dim = 2 * n_cells
+    H = np.zeros((dim, dim))
+
+    for m in range(n_cells):
+        # Intra-cell hopping (v)
+        H[2 * m, 2 * m + 1] = v
+        H[2 * m + 1, 2 * m] = v
+
+        # Inter-cell hopping (w)
+        if m < n_cells - 1:
+            H[2 * m + 1, 2 * m + 2] = w
+            H[2 * m + 2, 2 * m + 1] = w
+
+    return H
+
+def solve_ssh_system(
+    H: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Computes all eigenvalues and extracts the target state probabilities."""
+    # Compute all eigenvalues and eigenvectors using SciPy
+    eigvals, eigvecs = la.eigh(H)
+
+    # Find the index of the state closest to zero energy
+    idx = np.argmin(np.abs(eigvals))
+    psi = eigvecs[:, idx]
+
+    # Calculate probabilities
+    prob = np.abs(psi) ** 2
+    prob_A = prob[0::2]
+    prob_B = prob[1::2]
+
+    return eigvals, prob_A, prob_B
+
+def plot_probability_distribution(
+    prob_A: np.ndarray, prob_B: np.ndarray, v: float, w: float
+) -> None:
+    """Plots the probability distribution across unit cells for sublattices A and B."""
+    n_cells = len(prob_A)
+    cells = np.arange(n_cells)
+    width = 0.4
+
+    fig, ax = plt.subplots(figsize=(10, 5), dpi=100)
+
+    # Plot bars
+    ax.bar(
+        cells - width / 2,
+        prob_A,
+        width,
+        label="Sublattice A",
+        color="#1f77b4",
+        edgecolor="black",
+        alpha=0.8,
+    )
+    ax.bar(
+        cells + width / 2,
+        prob_B,
+        width,
+        label="Sublattice B",
+        color="#ff7f0e",
+        edgecolor="black",
+        alpha=0.8,
+    )
+
+    # Labels and Styling
+    ax.set_xlabel("Unit Cell Index", fontsize=12)
+    ax.set_ylabel(r"Probability Density $|\psi|^2$", fontsize=12)
+    ax.set_title(
+        f"SSH State Probability Distribution ($v={v}$, $w={w}$, $N={n_cells}$)",
+        fontsize=13,
+        pad=15,
+    )
+    ax.set_xticks(cells)
+
+    # Add a subtle grid behind the bars
+    ax.set_axisbelow(True)
+    ax.grid(axis="y", linestyle="--", alpha=0.7)
+
+    ax.legend(frameon=True, facecolor="white", edgecolor="none", fontsize=11)
+    filename = OUTPUT_DIR / f"probability_v={v}_w={w}_N={n_cells}.pdf"
+
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+    print(f"Saved: {filename}")
+
+def plot_eigenvalue_spectrum(eigvals: np.ndarray, v: float, w: float) -> None:
+    """Plots the complete eigenvalue energy spectrum of the SSH system."""
+    fig, ax = plt.subplots(figsize=(8, 5), dpi=100)
+
+    indices = np.arange(len(eigvals))
+
+    # Plot all eigenvalues as sorted states
+    ax.scatter(
+        indices,
+        eigvals,
+        color="#2ca02c",
+        edgecolor="black",
+        s=45,
+        zorder=3,
+        label="Eigenvalues",
+    )
+
+    # Reference line at zero-energy
+    ax.axhline(0, color="gray", linestyle="--", linewidth=1.2, alpha=0.6)
+
+    # Labels and Styling
+    ax.set_xlabel("State Index", fontsize=12)
+    ax.set_ylabel("Energy $E$", fontsize=12)
+    ax.set_title(
+        f"SSH Energy Spectrum ($v={v}$, $w={w}$, $N={len(eigvals)/2}$)",
+        fontsize=13,
+        pad=15,
+    )
+    n_cells = len(eigvals)//2
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend(frameon=True, facecolor="white", edgecolor="none", fontsize=11)
+    filename = OUTPUT_DIR / f"spectrum_v={v}_w={w}_N={n_cells}.pdf"
+
+    plt.tight_layout()
+    plt.savefig(filename, dpi=300, bbox_inches="tight")
+    plt.show()
+    plt.close()
+
+    print(f"Saved: {filename}")
+
+
+
+if __name__ == "__main__":
+    # Parameters
+    parameter_sets = [
+    (0.2, 1.0, 10),
+    (0.5, 1.0, 10),
+    (1.0, 1.0, 10),
+    (1.5, 1.0, 10),
+
+    (0.2, 1.0, 20),
+    (0.5, 1.0, 20),
+    (1.0, 1.0, 20),
+    (1.5, 1.0, 20),   
+]
+    
+    # Pipeline
+    for v, w, N in parameter_sets:
+
+        H = build_ssh_hamiltonian(v, w, N)
+
+        eigvals, pA, pB = solve_ssh_system(H)
+
+        plot_probability_distribution(
+            pA, pB, v=v, w=w
+        )
+
+        plot_eigenvalue_spectrum(
+            eigvals, v=v, w=w
+        )
