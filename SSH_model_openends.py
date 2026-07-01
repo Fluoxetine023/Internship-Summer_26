@@ -10,8 +10,9 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 plt.rcParams.update({
     "text.usetex": True,
     "font.family": "serif",
+    "font.serif": ["Computer Modern Roman"],
     "mathtext.fontset": "cm",
-    "font.size": 22,
+    "font.size": 23,
     "axes.labelsize": 23,
     "axes.titlesize": 22,
     "xtick.labelsize": 15,
@@ -49,8 +50,13 @@ def solve_ssh_system(
     # Compute all eigenvalues and eigenvectors using SciPy
     eigvals, eigvecs = la.eigh(H)
 
-    # Find the index of the state closest to zero energy
-    idx = np.argmin(np.abs(eigvals))
+    # Find the smallest positive eigenvalue
+    positive_indices = np.where(eigvals > 1e-12)[0]
+
+    if len(positive_indices) == 0:
+        raise ValueError("No positive eigenvalues found.")
+
+    idx = positive_indices[0]
     psi = eigvecs[:, idx]
 
     # Calculate probabilities
@@ -91,25 +97,20 @@ def plot_probability_distribution(
     )
 
     # Labels and Styling
-    ax.set_xlabel("Unit Cell Index", fontsize=12)
-    ax.set_ylabel(r"Probability Density $|\psi|^2$", fontsize=12)
-    ax.set_title(
-        f"SSH State Probability Distribution ($v={v}$, $w={w}$, $N={n_cells}$)",
-        fontsize=13,
-        pad=15,
-    )
+    ax.set_xlabel("Unit Cell Index")
+    ax.set_ylabel(r"Probability Density $|\psi|^2$")
     ax.set_xticks(cells)
 
     # Add a subtle grid behind the bars
     ax.set_axisbelow(True)
     ax.grid(axis="y", linestyle="--", alpha=0.7)
 
-    ax.legend(frameon=True, facecolor="white", edgecolor="none", fontsize=11)
+    ax.legend(frameon=True, facecolor="white", edgecolor="none")
     filename = OUTPUT_DIR / f"probability_v={v}_w={w}_N={n_cells}.pdf"
 
     plt.tight_layout()
     plt.savefig(filename, dpi=300, bbox_inches="tight")
-    plt.show()
+    #plt.show()
     plt.close()
 
     print(f"Saved: {filename}")
@@ -135,21 +136,16 @@ def plot_eigenvalue_spectrum(eigvals: np.ndarray, v: float, w: float) -> None:
     ax.axhline(0, color="gray", linestyle="--", linewidth=1.2, alpha=0.6)
 
     # Labels and Styling
-    ax.set_xlabel("State Index", fontsize=12)
-    ax.set_ylabel("Energy $E$", fontsize=12)
-    ax.set_title(
-        f"SSH Energy Spectrum ($v={v}$, $w={w}$, $N={len(eigvals)/2}$)",
-        fontsize=13,
-        pad=15,
-    )
+    ax.set_xlabel("State Index")
+    ax.set_ylabel("Energy $E$")
     n_cells = len(eigvals)//2
     ax.grid(True, linestyle="--", alpha=0.5)
-    ax.legend(frameon=True, facecolor="white", edgecolor="none", fontsize=11)
+    ax.legend(frameon=True, facecolor="white", edgecolor="none")
     filename = OUTPUT_DIR / f"spectrum_v={v}_w={w}_N={n_cells}.pdf"
 
     plt.tight_layout()
     plt.savefig(filename, dpi=300, bbox_inches="tight")
-    plt.show()
+    #plt.show()
     plt.close()
 
     print(f"Saved: {filename}")
